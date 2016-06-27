@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by darin on 6/26/16.
  */
-public class Token {
+class Token {
     byte kind;
     Object value;
     int after;
@@ -52,7 +52,7 @@ public class Token {
         return (first >= 'A') || (first <= 'Z') || (first >= 'a') || (first <= 'z') || (first == '_');
     }
 
-    public static Token readBareWord(byte[] input, int start, Token token) {
+    static Token readBareWord(byte[] input, int start, Token token) {
         byte first = input[start];
         StringBuilder builder = new StringBuilder();
         if (isBareStart(first)) {
@@ -95,7 +95,7 @@ public class Token {
         return (char) out;
     }
 
-    public static Token readQuoted(byte[] input, int start, Token token) {
+    static Token readQuoted(byte[] input, int start, Token token) {
         token.kind = QUOTED;
         byte quote = input[start];
         start += 1;
@@ -146,7 +146,7 @@ public class Token {
         return token;
     }
 
-    public static Token readNumber(byte[] input, int start, Token token) {
+    static Token readNumber(byte[] input, int start, Token token) {
         token.kind = NUMBER;
         int last = input.length - 1;
         int sign = +1;
@@ -174,7 +174,7 @@ public class Token {
                 }
             }
             current = current * sign;
-            if (start < last && input[start] == 'e' || input[start] == 'E') {
+            if (start < last && (input[start] == 'e' || input[start] == 'E')) {
                 start += 1;
                 int eSign = 1;
                 if (input[start] == '-') {
@@ -206,7 +206,7 @@ public class Token {
         return token;
     }
 
-    public static int readComment(byte[] input, int start) {
+    static int readComment(byte[] input, int start) {
         int last = input.length - 1;
         if (start == last) return last + 1;
         byte val1 = input[start];
@@ -227,11 +227,12 @@ public class Token {
                 return start + 1;
         }
     }
-    public static List<Token> readMany(String input) {
+
+    static List<Token> readMany(String input) {
         return readMany(input.getBytes());
     }
 
-    public static List<Token> readMany(byte[] input) {
+    static List<Token> readMany(byte[] input) {
         List<Token> tokens = new ArrayList<Token>();
         int start = 0;
         while (true) {
@@ -243,7 +244,7 @@ public class Token {
         return tokens;
     }
 
-    public static Token readOne(byte[] input, int start) {
+    static Token readOne(byte[] input, int start) {
         Token out = new Token();
         while (true) {
             if (start >= input.length) {
@@ -303,7 +304,11 @@ public class Token {
             case NUMBER:
                 return "Number(" + value.toString() + ")";
             case QUOTED:
-                return "Quoted('" + value.toString() + "')";
+                if (value != null) {
+                    return "Quoted(" + Statics.repr(value.toString()) + ")";
+                } else {
+                    return "Quoted()";
+                }
             case BAREWORD:
                 return "BareWord('" + value.toString() + "')";
             default:

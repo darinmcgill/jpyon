@@ -18,6 +18,7 @@ public class Statics {
         viaToString.add(Byte.class);
         viaToString.add(Float.class);
         viaToString.add(Long.class);
+        quote = new HashSet<Class>();
         quote.add(String.class);
         quote.add(Character.class);
         quote.add(Instant.class);
@@ -60,5 +61,46 @@ public class Statics {
         if (obj instanceof Object[]) {
 
         }
+    }
+
+    static String repr(String s) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("'");
+        char[] x = s.toCharArray();
+        for (char c : x) {
+            if (c == '\'' || c == '"') {
+                builder.append('\\');
+                builder.append(c);
+                continue;
+            }
+            if (c >= 32 && c < 127) {
+                builder.append(c);
+            } else {
+                String hex = Integer.toHexString((int) c);
+                if (c <= 255) {
+                    switch (c) {
+                        case '\n':
+                            builder.append("\\n");
+                            break;
+                        case '\t':
+                            builder.append("\\t");
+                            break;
+                        case '\r':
+                            builder.append("\\r");
+                            break;
+                        default:
+                            builder.append("\\x");
+                            if (hex.length() < 2) builder.append('0');
+                            builder.append(hex);
+                    }
+                } else {
+                    builder.append("\\u");
+                    while (hex.length() < 4) hex = "0" + hex;
+                    builder.append(hex);
+                }
+            }
+        }
+        builder.append("'");
+        return builder.toString();
     }
 }

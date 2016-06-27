@@ -1,13 +1,9 @@
 package com.x5e.jpyon;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import static org.testng.Assert.*;
 
-/**
- * Created by darin on 6/26/16.
- */
 public class TestToken {
 
     @Test
@@ -89,7 +85,9 @@ public class TestToken {
     @Test
     public void testStrings() throws Exception {
         List<Token> tokens = Token.readMany("'foo bar' '' \"'\" '\\n' '\t\\t'");
-        for (Token token : tokens) System.out.println(token.toString());
+        for (Token token : tokens) {
+            System.out.println(token.toString());
+        }
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, "foo bar"));
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, ""));
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, "'"));
