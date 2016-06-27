@@ -49,7 +49,44 @@ public class Token {
     }
 
     public static Token readQuoted(byte[] input, int start, Token token) {
-        return null;
+        token.kind = QUOTED;
+        byte quote = input[start];
+        start += 1;
+        int last = input.length - 1;
+        StringBuilder builder = new StringBuilder();
+        while (true) {
+            if (start > last) {
+                throw new RuntimeException("fell off end off inside string: '" + builder.toString());
+            }
+            byte b = input[start];
+            start += 1;
+            if (b == quote) {
+                break;
+            }
+            if (b == '\\') {
+                if (start > last) throw new RuntimeException("fell of inside string");
+                b = input[start];
+                start += 1;
+                switch (b) {
+                    case '\'': builder.append('\''); break;
+                    case '"': builder.append('"'); break;
+                    case 'n': builder.append('\n'); break;
+                    case 't': builder.append('\t'); break;
+                    case '\\': builder.append('\\'); break;
+                    case '/': builder.append('/'); break;
+                    case 'f': builder.append('\f'); break;
+                    case 'r': builder.append('\r'); break;
+                    case 'b': builder.append('\b'); break;
+                    default:
+                        throw new RuntimeException("non-recognized escape:" + Character.toString((char)b));
+                }
+                continue;
+            }
+            builder.append((char) b);
+        }
+        token.value = builder.toString();
+        token.after = start;
+        return token;
     }
 
     public static Token readNumber(byte[] input, int start, Token token) {
