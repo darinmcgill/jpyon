@@ -86,7 +86,6 @@ public class TestToken {
         assertEquals(tokens.remove(0), new Token(Token.NUMBER, .01));
     }
 
-
     @Test
     public void testStrings() throws Exception {
         List<Token> tokens = Token.readMany("'foo bar' '' \"'\" '\\n' '\t\\t'");
@@ -96,7 +95,15 @@ public class TestToken {
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, "'"));
         //assertEquals(tokens.remove(0), new Token(Token.QUOTED, "\\n"));
         Token t = tokens.remove(0);
-        assertEquals(t.value,"\n");
+        assertEquals(t.value, "\n");
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, "\t\t"));
+    }
+
+    @Test
+    public void testStringHex() throws Exception {
+        List<Token> tokens = Token.readMany("'\\x7aF' '\\X7A0' '\\u007a'");
+        assertEquals(tokens.remove(0), new Token(Token.QUOTED, "zF"));
+        assertEquals(tokens.remove(0), new Token(Token.QUOTED, "z0"));
+        assertEquals(tokens.remove(0), new Token(Token.QUOTED, "z"));
     }
 }

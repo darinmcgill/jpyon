@@ -48,6 +48,29 @@ public class Token {
         return null;
     }
 
+    static int fromHex(byte b) {
+        if (b >= '0' && b <= '9')
+            return (b - '0');
+        if (b >= 'a' && b <= 'f') {
+            return (b - 'a' + 10);
+        }
+        if (b >= 'A' && b <= 'F') {
+            return (b - 'A' + 10);
+        }
+        throw new RuntimeException("unexpected hex byte: " + Character.toString((char) b));
+    }
+
+    static char fromHex(byte[] input, int start, int n) {
+        int out = 0;
+        while (n > 0) {
+            out *= 16;
+            out += fromHex(input[start]);
+            start += 1;
+            n -= 1;
+        }
+        return (char) out;
+    }
+
     public static Token readQuoted(byte[] input, int start, Token token) {
         token.kind = QUOTED;
         byte quote = input[start];
@@ -69,14 +92,24 @@ public class Token {
                 start += 1;
                 switch (b) {
                     case '\'': builder.append('\''); break;
-                    case '"': builder.append('"'); break;
-                    case 'n': builder.append('\n'); break;
-                    case 't': builder.append('\t'); break;
+                    case '"':  builder.append('"'); break;
+                    case 'n':  builder.append('\n'); break;
+                    case 't':  builder.append('\t'); break;
                     case '\\': builder.append('\\'); break;
-                    case '/': builder.append('/'); break;
-                    case 'f': builder.append('\f'); break;
-                    case 'r': builder.append('\r'); break;
-                    case 'b': builder.append('\b'); break;
+                    case '/':  builder.append('/'); break;
+                    case 'f':  builder.append('\f'); break;
+                    case 'r':  builder.append('\r'); break;
+                    case 'b':  builder.append('\b'); break;
+                    case 'u':
+                    case 'U':
+                        builder.append(fromHex(input,start,4));
+                        start += 4;
+                        break;
+                    case 'x':
+                    case 'X':
+                        builder.append(fromHex(input,start,2));
+                        start += 2;
+                        break;
                     default:
                         throw new RuntimeException("non-recognized escape:" + Character.toString((char)b));
                 }
