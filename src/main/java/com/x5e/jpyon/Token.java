@@ -44,8 +44,32 @@ public class Token {
         return (obj != null && (obj instanceof Token) && obj.toString().equals(this.toString()));
     }
 
+    static boolean isBarePart(int i) {
+        return Character.isLetterOrDigit(i) || i == '_' || i == '.';
+    }
+
+    static boolean isBareStart(int first) {
+        return (first >= 'A') || (first <= 'Z') || (first >= 'a') || (first <= 'z') || (first == '_');
+    }
+
     public static Token readBareWord(byte[] input, int start, Token token) {
-        return null;
+        byte first = input[start];
+        StringBuilder builder = new StringBuilder();
+        if (isBareStart(first)) {
+            builder.append((char) first);
+            start += 1;
+        } else {
+            throw new RuntimeException("unexpected character: " + Character.toString((char) first));
+        }
+        int last = input.length - 1;
+        while (start <= last && isBarePart(input[start])) {
+            builder.append((char) input[start]);
+            start += 1;
+        }
+        token.value = builder.toString();
+        token.after = start;
+        token.kind = BAREWORD;
+        return token;
     }
 
     static int fromHex(byte b) {

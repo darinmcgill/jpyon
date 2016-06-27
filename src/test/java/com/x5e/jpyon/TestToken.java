@@ -106,4 +106,16 @@ public class TestToken {
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, "z0"));
         assertEquals(tokens.remove(0), new Token(Token.QUOTED, "z"));
     }
+
+    @Test
+    public void testBare() throws Exception {
+        List<Token> tokens = Token.readMany("true True x00 _please.3(null)");
+        assertEquals(tokens.remove(0), new Token(Token.BAREWORD, "true"));
+        assertEquals(tokens.remove(0), new Token(Token.BAREWORD, "True"));
+        assertEquals(tokens.remove(0), new Token(Token.BAREWORD, "x00"));
+        assertEquals(tokens.remove(0), new Token(Token.BAREWORD, "_please.3"));
+        assertEquals(tokens.remove(0), new Token('('));
+        assertEquals(tokens.remove(0), new Token(Token.BAREWORD, "null"));
+        assertEquals(tokens.remove(0), new Token(')'));
+    }
 }
