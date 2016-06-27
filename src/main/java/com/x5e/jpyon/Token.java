@@ -1,6 +1,6 @@
 package com.x5e.jpyon;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 class Token {
@@ -12,6 +12,21 @@ class Token {
     static final byte QUOTED = 1;
     static final byte BAREWORD = 2;
     static final byte NUMBER = 3;
+
+    Object getScalar() {
+        if (kind == QUOTED || kind == NUMBER)
+            return value;
+        if (kind == BAREWORD) {
+            String lower = value.toString().toLowerCase();
+            if (lower.equals("true"))
+                return Boolean.TRUE;
+            if (lower.equals("false"))
+                return Boolean.FALSE;
+            if (lower.equals("null") || lower.equals("none"))
+                return null;
+        }
+        throw new RuntimeException("not a scalar: " + this.toString());
+    }
 
     Token(byte kind, Object value, int after) {
         this.kind = kind;
@@ -228,7 +243,7 @@ class Token {
     }
 
     static List<Token> readMany(byte[] input) {
-        List<Token> tokens = new ArrayList<Token>();
+        List<Token> tokens = new LinkedList<Token>();
         int start = 0;
         while (true) {
             Token token = Token.readOne(input, start);

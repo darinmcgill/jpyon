@@ -3,11 +3,10 @@ package com.x5e.jpyon;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by darin on 6/26/16.
- */
 public class Statics {
     private static Set<Class> viaToString;
     private static Set<Class> quote;
@@ -33,8 +32,6 @@ public class Statics {
     }
 
     static void toPyon(Object obj,StringBuilder stringBuilder, Set<Object> seen) {
-        if (seen.contains(obj))
-            throw new RuntimeException("recursive object");
         if (obj == null) {
             stringBuilder.append("null");
             return;
@@ -53,13 +50,38 @@ public class Statics {
         }
         if (quote.contains(c)) {
             //@TODO // FIXME: 6/26/16 escape special characters
-            stringBuilder.append('"');
+            stringBuilder.append('\'');
             stringBuilder.append(obj.toString());
-            stringBuilder.append('"');
+            stringBuilder.append('\'');
         }
+        if (seen.contains(obj))
+            throw new RuntimeException("recursive object");
         seen.add(obj);
-        if (obj instanceof Object[]) {
-
+        if (obj instanceof List) {
+            stringBuilder.append('[');
+            boolean first = true;
+            List<? extends Object> list = (List<? extends Object>) obj;
+            for (Object element : list) {
+                if (! first) stringBuilder.append(",");
+                first = false;
+                toPyon(element,stringBuilder,seen);
+            }
+            stringBuilder.append(']');
+            return;
+        }
+        if (obj instanceof Map) {
+            stringBuilder.append('{');
+            // FIXME: deal with maps of things other than <String,Object>
+            Map<String,Object> map = (Map<String,Object>) obj;
+            boolean seenOne = false;
+            for (Map.Entry<String,Object> entry : map.entrySet()) {
+                if (seenOne) stringBuilder.append(',');
+                seenOne = true;
+                stringBuilder.append(repr(entry.getKey()));
+                stringBuilder.append(':');
+                toPyon(entry.getValue(),stringBuilder,seen);
+            }
+            stringBuilder.append('}');
         }
     }
 
