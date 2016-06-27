@@ -59,4 +59,18 @@ public class TestToken {
         assertEquals(tokens.remove(0),new Token(Token.NUMBER,22));
         assertEquals(tokens.remove(0),new Token(Token.END));
     }
+
+
+    @Test
+    public void testNumbers() throws Exception {
+        List<Token> tokens = Token.readMany("7 +2 -3 .2 -19.03 1.");
+        for (Token token : tokens) System.out.println(token.toString());
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,7));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,2));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,-3));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,0.2));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,-19.03));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,1.0));
+        assertEquals(tokens.remove(0),new Token(Token.END));
+    }
 }

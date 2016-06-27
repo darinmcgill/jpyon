@@ -53,6 +53,7 @@ public class Token {
     }
 
     public static Token readNumber(byte[] input, int start, Token token) {
+        token.kind = NUMBER;
         int last = input.length - 1;
         int sign = +1;
         if (input[start] == '+')
@@ -67,8 +68,27 @@ public class Token {
             intPart += (input[start] - '0');
             start += 1;
         }
-        token.kind = NUMBER;
-        token.value = sign * intPart;
+
+        if (start <= last && (input[start] == '.' || input[start] == 'e' || input[start] == 'E')){
+            double current = intPart;
+            double place = 0.1;
+            if (input[start] == '.') {
+                start += 1;
+                while (start <= last && input[start] >= '0' && input[start] <= '9') {
+                    current += (input[start] - '0') * place;
+                    place = place * 0.1;
+                    start += 1;
+                }
+            }
+            token.value = current * sign;
+        } else {
+            intPart = sign * intPart;
+            if (intPart <= Integer.MAX_VALUE && intPart >= Integer.MIN_VALUE) {
+                token.value = (int) intPart;
+            } else {
+                token.value = intPart;
+            }
+        }
         token.after = start;
         return token;
     }
