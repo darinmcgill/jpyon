@@ -68,7 +68,6 @@ public class Token {
             intPart += (input[start] - '0');
             start += 1;
         }
-
         if (start <= last && (input[start] == '.' || input[start] == 'e' || input[start] == 'E')){
             double current = intPart;
             double place = 0.1;
@@ -80,7 +79,27 @@ public class Token {
                     start += 1;
                 }
             }
-            token.value = current * sign;
+            current = current * sign;
+            if (start < last && input[start] == 'e' || input[start] == 'E') {
+                start += 1;
+                int eSign = 1;
+                if (input[start] == '-') {
+                    eSign = -1;
+                    start += 1;
+                } else {
+                    if (input[start] == '+')
+                        start += 1;
+                }
+                int eVal = 0;
+                while (start <= last && input[start] >= '0' && input[start] <= '9') {
+                    eVal *= 10;
+                    eVal += input[start] - '0';
+                    start += 1;
+                }
+                eVal *= eSign;
+                current *= Math.pow(10,eVal);
+            }
+            token.value = current;
         } else {
             intPart = sign * intPart;
             if (intPart <= Integer.MAX_VALUE && intPart >= Integer.MIN_VALUE) {

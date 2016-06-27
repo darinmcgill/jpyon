@@ -73,4 +73,16 @@ public class TestToken {
         assertEquals(tokens.remove(0), new Token(Token.NUMBER,1.0));
         assertEquals(tokens.remove(0),new Token(Token.END));
     }
+
+    @Test
+    public void testExp() throws Exception {
+        List<Token> tokens = Token.readMany("7e0 +2e-1 -3e2 .2E1 -19.03e+5 1.E-2");
+        for (Token token : tokens) System.out.println(token.toString());
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,7.0));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,0.2));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,-300.));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,2.0));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,-1903000.));
+        assertEquals(tokens.remove(0), new Token(Token.NUMBER,.01));
+    }
 }
