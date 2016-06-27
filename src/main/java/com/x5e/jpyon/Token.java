@@ -1,13 +1,8 @@
 package com.x5e.jpyon;
 
-import java.io.CharArrayReader;
-import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by darin on 6/26/16.
- */
 class Token {
     byte kind;
     Object value;
