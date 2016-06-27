@@ -53,8 +53,29 @@ public class Parser {
             out.put(key,value);
         }
     }
-    public Object readPyob() {
-        return null;
+    public Object readPyob(Token bare) {
+        Pyob out = new Pyob(bare.value.toString());
+        while (true) {
+            Token first = tokens.get(0);
+            if (first.kind == ')') {
+                tokens.remove(0);
+                return out;
+            }
+            if (first.kind == ',') {
+                tokens.remove(0);
+                continue;
+            }
+            Token second = tokens.get(1);
+            if (first.kind == Token.BAREWORD && second.kind == '=') {
+                tokens.remove(0);
+                tokens.remove(0);
+                String key = first.value.toString();
+                Object value = readValue();
+                out.mapped.put(key,value);
+                continue;
+            }
+            out.ordered.add(readValue());
+        }
     }
     public Object readValue() {
         if (tokens.isEmpty())
@@ -65,7 +86,7 @@ public class Parser {
         if (first.kind == Token.BAREWORD) {
             if ((!tokens.isEmpty()) && tokens.get(0).kind == '(') {
                 tokens.remove(0);
-                return readPyob();
+                return readPyob(first);
             }
         }
         return first.getScalar();

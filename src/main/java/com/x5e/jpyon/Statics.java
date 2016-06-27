@@ -47,12 +47,11 @@ public class Statics {
         }
         if (viaToString.contains(c)) {
             stringBuilder.append(obj.toString());
+            return;
         }
         if (quote.contains(c)) {
-            //@TODO // FIXME: 6/26/16 escape special characters
-            stringBuilder.append('\'');
-            stringBuilder.append(obj.toString());
-            stringBuilder.append('\'');
+            stringBuilder.append(repr(obj.toString()));
+            return;
         }
         if (seen.contains(obj))
             throw new RuntimeException("recursive object");
@@ -83,6 +82,27 @@ public class Statics {
             }
             stringBuilder.append('}');
         }
+        if (obj instanceof Pyob) {
+            Pyob pyob = (Pyob) obj;
+            stringBuilder.append(pyob.kind);
+            stringBuilder.append('(');
+            boolean seenOne = false;
+            for (Object o : pyob.ordered) {
+                if (seenOne) stringBuilder.append(',');
+                seenOne = true;
+                toPyon(o,stringBuilder,seen);
+            }
+            for (Map.Entry entry : pyob.mapped.entrySet()) {
+                if (seenOne) stringBuilder.append(',');
+                seenOne = true;
+                stringBuilder.append(entry.getKey().toString());
+                stringBuilder.append('=');
+                toPyon(entry.getValue(),stringBuilder,seen);
+            }
+            stringBuilder.append(')');
+            return;
+        }
+        throw new RuntimeException("don't know how to convert to Pyon:" + obj.getClass().toString());
     }
 
     static String repr(String s) {

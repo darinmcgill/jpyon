@@ -6,9 +6,9 @@ import java.util.*;
  * Created by darin on 6/26/16.
  */
 public class Pyob {
-    public String kind;
-    public List<Object> ordered;
-    public Map<String,Object> mapped;
+    String kind;
+    List<Object> ordered;
+    Map<String,Object> mapped;
 
     public Pyob(String kind, Collection<? extends Object> ordered, Map<String,? extends Object> mapped) {
         this.kind = kind;
@@ -41,6 +41,10 @@ public class Pyob {
             return ordered.get((Integer) obj);
         }
         throw new RuntimeException("bad index: " + obj.toString());
+    }
+
+    public String toString() {
+        return Statics.toPyon(this);
     }
 
 }
