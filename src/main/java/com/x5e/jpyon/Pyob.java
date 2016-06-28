@@ -2,9 +2,6 @@ package com.x5e.jpyon;
 
 import java.util.*;
 
-/**
- * Created by darin on 6/26/16.
- */
 public class Pyob {
     String kind;
     List<Object> ordered;
@@ -46,5 +43,4 @@ public class Pyob {
     public String toString() {
         return Statics.toPyon(this);
     }
-
 }

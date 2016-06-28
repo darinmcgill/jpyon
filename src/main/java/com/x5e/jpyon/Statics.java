@@ -1,15 +1,18 @@
 package com.x5e.jpyon;
 
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Statics {
     private static Set<Class> viaToString;
     private static Set<Class> quote;
+    private static Map<String,Class> registered = new HashMap<String, Class>();
+    private static Objenesis objenesis = new ObjenesisStd();
     static {
         viaToString = new HashSet<Class>();
         viaToString.add(Double.class);
@@ -23,6 +26,15 @@ public class Statics {
         quote.add(Instant.class);
         quote.add(Enum.class);
         quote.add(ZonedDateTime.class);
+    }
+
+    public static void register(Class c) {
+        String simple = c.getSimpleName();
+        Class have = registered.getOrDefault(simple,null);
+        if (have != null && ! have.equals(c))
+            throw new RuntimeException("conflicting classes: "
+                    + c.toString() + " " + have.toString());
+        registered.put(simple,c);
     }
 
     public static String toPyon(Object obj) {
@@ -144,5 +156,47 @@ public class Statics {
         }
         builder.append("'");
         return builder.toString();
+    }
+
+    static Pyob toPyob(Object obj){
+        Class aClass = obj.getClass();
+        Pyob out = new Pyob(aClass.getSimpleName());
+        while (aClass != null) {
+            Field[] fields = aClass.getDeclaredFields();
+            for (Field field : fields) {
+                if (Modifier.isTransient(field.getModifiers())) continue;
+                if (Modifier.isStatic(field.getModifiers())) continue;
+                field.setAccessible(true);
+                String name = field.getName();
+                if (name.equals("$assertionsDisabled")) continue;
+                try {
+                    out.mapped.put(name, field.get(obj));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            aClass = aClass.getSuperclass();
+        }
+        return out;
+    }
+
+    static Object fromPyob(Pyob pyob)
+            throws ClassNotFoundException,NoSuchFieldException,IllegalAccessException
+    {
+        String name = pyob.kind;
+        Class c;
+        if (registered.containsKey(name)) {
+            c = registered.get(name);
+        } else {
+            c = Class.forName(name);
+        }
+        Object out = objenesis.newInstance(c);
+        for (Map.Entry<String,Object> entry : pyob.mapped.entrySet()) {
+            String key = entry.getKey();
+            Field field = c.getDeclaredField(key);
+            field.setAccessible(true);
+            field.set(out,entry.getValue());
+        }
+        return out;
     }
 }
