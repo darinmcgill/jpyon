@@ -31,7 +31,7 @@ class B extends A {
 }
 
 class C {
-    TreeSet<String> strings;
+    Set<Character> chars;
 }
 
 public class TestStatics {
@@ -90,11 +90,11 @@ public class TestStatics {
     @Test
     public void testCoerceToCollection() throws Exception {
         Statics.register(C.class);
-        Object input = Parser.parse("C(strings=['a','b'])");
+        Object input = Parser.parse("C(chars=['a','b'])");
         C out = (C) Statics.coerceTo(C.class,input);
-        Set<String> s = out.strings;
-        assertTrue(s.contains("a"));
-        assertTrue(s.contains("b"));
+        Set<Character> s = out.chars;
+        assertTrue(s.contains('a'));
+        assertTrue(s.contains('b'));
     }
 
 
@@ -108,8 +108,10 @@ public class TestStatics {
     }
 
     @Test
-    public void decompose() throws Exception {
-        Class c = String[].class;
-        System.out.println(c.toString());
+    public void testCast() throws Exception {
+        String input = "Instant('2007-12-03T10:15:30.00Z')";
+        Pyob pyob = (Pyob) Parser.parse(input);
+        Object out = Statics.fromPyob(pyob);
+        assertTrue(out instanceof Instant);
     }
 }

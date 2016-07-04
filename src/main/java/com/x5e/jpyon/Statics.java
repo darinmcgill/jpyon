@@ -4,8 +4,7 @@ import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
 
 import java.lang.reflect.*;
-import java.time.Instant;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 
 public class Statics {
@@ -30,6 +29,17 @@ public class Statics {
         primitives.put(double.class,Double.class);
         primitives.put(float.class,Float.class);
         primitives.put(char.class,Character.class);
+        register(Instant.class);
+        register(ZonedDateTime.class);
+        register(Character.class);
+        register(Duration.class);
+        register(LocalDate.class);
+        register(LocalTime.class);
+        register(LocalDateTime.class);
+        register(Period.class);
+        register(ZoneId.class);
+        register(OffsetDateTime.class);
+        register(OffsetTime.class);
     }
 
     public static void register(Class c) {
@@ -231,6 +241,7 @@ public class Statics {
             target = (Class) pType.getRawType();
             args = pType.getActualTypeArguments();
         }
+        if (target == null) throw new RuntimeException("unexpected type");
         if (obj instanceof Pyob) {
             try {
                 obj = fromPyob((Pyob) obj);
@@ -294,6 +305,29 @@ public class Statics {
         }
 
         if (Collection.class.isAssignableFrom(target)) {
+            while (target.isInterface()) {
+                if (target.equals(Set.class)) {
+                    target = LinkedHashSet.class;
+                    break;
+                }
+                if (target.equals(List.class) || target.equals(RandomAccess.class)) {
+                    target = ArrayList.class;
+                    break;
+                }
+                if (target.equals(Deque.class) || target.equals(Queue.class)) {
+                    target = LinkedList.class;
+                    break;
+                }
+                if (target.equals(SortedSet.class) || target.equals(NavigableSet.class)) {
+                    target = TreeSet.class;
+                    break;
+                }
+                if (target.equals(Collection.class)) {
+                    target = ArrayList.class;
+                    break;
+                }
+                throw new RuntimeException("don't know how to instantiate: " + target.toString());
+            }
             try {
                 Collection outCol = (Collection) target.newInstance();
                 if (args != null && args.length == 1) {
@@ -320,6 +354,9 @@ public class Statics {
     {
         String name = pyob.kind;
         Class c = getClass(name);
+        if (pyob.mapped.isEmpty() && pyob.ordered.size() == 1) {
+            return coerceTo(c,pyob.ordered.get(0));
+        }
         Object out = objenesis.newInstance(c);
         for (Map.Entry<String,Object> entry : pyob.mapped.entrySet()) {
             String key = entry.getKey();
