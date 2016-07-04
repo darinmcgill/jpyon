@@ -1,6 +1,11 @@
 package com.x5e.jpyon;
 
 import org.testng.annotations.Test;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.time.Instant;
+
 import static org.testng.Assert.*;
 
 
@@ -55,5 +60,15 @@ public class TestStatics {
         Object obj = Statics.fromPyob(pyob1);
         assertTrue(obj instanceof A);
         System.out.println(obj.toString());
+    }
+
+    @Test
+    public void testCoerceTo() throws Exception {
+        assertEquals(Statics.coerceTo(int.class,56),56);
+        assertEquals(Statics.coerceTo(Long.class,3),3L);
+        Instant instant = Instant.now();
+        assertEquals(Statics.coerceTo(Instant.class,instant.toString()),instant);
+        assertEquals(Statics.coerceTo(char.class,"j"),'j');
+        assertEquals(Statics.coerceTo(int.class,"3"),3);
     }
 }

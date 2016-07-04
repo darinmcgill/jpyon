@@ -2,39 +2,75 @@ package com.x5e.jpyon;
 
 import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+
+import java.lang.reflect.*;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 
 public class Statics {
-    private static Set<Class> viaToString;
-    private static Set<Class> quote;
-    private static Map<String,Class> registered = new HashMap<String, Class>();
+    private static Set<Class> viaToString = new HashSet<Class>();
+    private static Set<Class> quote =  new HashSet<Class>();
+    private static Map<String,Set<Class>> registered = new HashMap<String, Set<Class>>();
     private static Objenesis objenesis = new ObjenesisStd();
+    private static Map<Class,Class> primitives = new HashMap<>();
     static {
-        viaToString = new HashSet<Class>();
         viaToString.add(Double.class);
         viaToString.add(Integer.class);
         viaToString.add(Byte.class);
         viaToString.add(Float.class);
         viaToString.add(Long.class);
-        quote = new HashSet<Class>();
         quote.add(String.class);
         quote.add(Character.class);
         quote.add(Instant.class);
         quote.add(Enum.class);
         quote.add(ZonedDateTime.class);
+        primitives.put(int.class,Integer.class);
+        primitives.put(long.class,Long.class);
+        primitives.put(double.class,Double.class);
+        primitives.put(float.class,Float.class);
+        primitives.put(char.class,Character.class);
     }
 
     public static void register(Class c) {
         String simple = c.getSimpleName();
-        Class have = registered.getOrDefault(simple,null);
-        if (have != null && ! have.equals(c))
-            throw new RuntimeException("conflicting classes: "
-                    + c.toString() + " " + have.toString());
-        registered.put(simple,c);
+        Set<Class> classes = registered.computeIfAbsent(simple,k -> new HashSet<>());
+        classes.add(c);
+    }
+
+    public static void registerAll() {
+        try {
+            Field f = ClassLoader.class.getDeclaredField("classes");
+            f.setAccessible(true);
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            @SuppressWarnings("unchecked")
+            Vector<Class> classes = (Vector<Class>) f.get(classLoader);
+            classes.forEach(Statics::register);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void clear() {
+        registered.clear();
+    }
+
+    public static Class getClass(String name) throws ClassNotFoundException {
+        Set<Class> classes = registered.get(name);
+        if (classes != null) {
+            int size = classes.size();
+            assert size >= 1;
+            if (size == 1) {
+                return classes.iterator().next();
+            } else {
+                Iterator<Class> it = classes.iterator();
+                String error = "multiple classes match " + name;
+                error = error + " " + it.next().toString();
+                error = error + " " + it.next().toString();
+                throw new RuntimeException(error);
+            }
+        }
+        return Class.forName(name);
     }
 
     public static String toPyon(Object obj) {
@@ -180,22 +216,65 @@ public class Statics {
         return out;
     }
 
+    static Object coerceTo(Type type, Object obj) {
+        Class objClass = obj.getClass();
+        Class target = (Class) type;
+        if (obj instanceof Pyob) {
+            try {
+                obj = fromPyob((Pyob) obj);
+            } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Class boxed = primitives.get(type);
+        if (boxed != null) type = boxed;
+        if (obj.getClass().equals(type)) return obj;
+        if (target.isAssignableFrom(objClass)) {
+            return obj;
+        }
+        if (Number.class.isAssignableFrom(target)) {
+            if (obj instanceof Number) {
+                Number num = (Number) obj;
+                if (target.equals(Long.class)) return num.longValue();
+                if (target.equals(Integer.class)) return num.intValue();
+                if (target.equals(Double.class)) return num.doubleValue();
+                if (target.equals(Float.class)) return num.floatValue();
+                if (target.equals(Short.class)) return num.shortValue();
+                if (target.equals(Byte.class)) return num.byteValue();
+            }
+        }
+        if (obj instanceof String) {
+            if (target.equals(Character.class)) return obj.toString().charAt(0);
+            try {
+                Method method = target.getDeclaredMethod("parse",CharSequence.class);
+                return method.invoke(target,obj.toString());
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+
+            }
+            try {
+                Method method = target.getDeclaredMethod("valueOf",String.class);
+                return method.invoke(target,obj.toString());
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+
+            }
+        }
+
+        throw new RuntimeException("don't know how to coerce " +
+                obj.getClass().toString() + " to " + type.toString());
+    }
+
     static Object fromPyob(Pyob pyob)
             throws ClassNotFoundException,NoSuchFieldException,IllegalAccessException
     {
         String name = pyob.kind;
-        Class c;
-        if (registered.containsKey(name)) {
-            c = registered.get(name);
-        } else {
-            c = Class.forName(name);
-        }
+        Class c = getClass(name);
         Object out = objenesis.newInstance(c);
         for (Map.Entry<String,Object> entry : pyob.mapped.entrySet()) {
             String key = entry.getKey();
             Field field = c.getDeclaredField(key);
             field.setAccessible(true);
-            field.set(out,entry.getValue());
+            Object value = coerceTo(field.getType(),entry.getValue());
+            field.set(out,value);
         }
         return out;
     }
