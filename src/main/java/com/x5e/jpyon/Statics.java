@@ -44,8 +44,11 @@ public class Statics {
             f.setAccessible(true);
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             @SuppressWarnings("unchecked")
-            Vector<Class> classes = (Vector<Class>) f.get(classLoader);
-            classes.forEach(Statics::register);
+            Vector<Class> classes1 = (Vector<Class>) f.get(classLoader);
+            Object[] classes = classes1.toArray();
+            for (Object c : classes) {
+                register((Class) c);
+            }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -216,9 +219,18 @@ public class Statics {
         return out;
     }
 
+
     static Object coerceTo(Type type, Object obj) {
-        Class objClass = obj.getClass();
-        Class target = (Class) type;
+        Class target = null;
+        Type[] args = null;
+        if (type instanceof Class) {
+            target = (Class) type;
+        }
+        if (type instanceof ParameterizedType) {
+            ParameterizedType pType = (ParameterizedType) type;
+            target = (Class) pType.getRawType();
+            args = pType.getActualTypeArguments();
+        }
         if (obj instanceof Pyob) {
             try {
                 obj = fromPyob((Pyob) obj);
@@ -226,9 +238,11 @@ public class Statics {
                 throw new RuntimeException(e);
             }
         }
-        Class boxed = primitives.get(type);
-        if (boxed != null) type = boxed;
-        if (obj.getClass().equals(type)) return obj;
+        Class objClass = obj.getClass();
+        if (target.isPrimitive()) {
+            target = primitives.get(target);
+        }
+        if (objClass.equals(target)) return obj;
         if (target.isAssignableFrom(objClass)) {
             return obj;
         }
@@ -258,9 +272,47 @@ public class Statics {
 
             }
         }
+        if (target.isArray()){
+            Class componentType = target.getComponentType();
+            if (objClass.isArray()) {
+                int length = Array.getLength(obj);
+                Object out = Array.newInstance(componentType, length);
+                for (int i=0;i<length;i++) {
+                    Array.set(out,i,coerceTo(componentType,Array.get(obj,i)));
+                }
+                return out;
+            }
+            if (obj instanceof Collection) {
+                Collection<? extends Object> collection = (Collection<? extends Object>) obj;
+                Object out = Array.newInstance(componentType, collection.size());
+                Iterator<? extends Object> it = collection.iterator();
+                for (int i=0;it.hasNext();i++) {
+                    Array.set(out,i,coerceTo(componentType,it.next()));
+                }
+                return out;
+            }
+        }
+
+        if (Collection.class.isAssignableFrom(target)) {
+            try {
+                Collection outCol = (Collection) target.newInstance();
+                if (args != null && args.length == 1) {
+                    if (obj instanceof Collection) {
+                        Collection srcCol = (Collection) obj;
+                        for (Object thing : srcCol) {
+                            outCol.add(coerceTo(args[0],thing));
+                        }
+                        return outCol;
+                    }
+                }
+            } catch (IllegalAccessException | InstantiationException e) {
+
+            }
+        }
+
 
         throw new RuntimeException("don't know how to coerce " +
-                obj.getClass().toString() + " to " + type.toString());
+                objClass.toString() + " to " + target.toString());
     }
 
     static Object fromPyob(Pyob pyob)
@@ -273,7 +325,7 @@ public class Statics {
             String key = entry.getKey();
             Field field = c.getDeclaredField(key);
             field.setAccessible(true);
-            Object value = coerceTo(field.getType(),entry.getValue());
+            Object value = coerceTo(field.getGenericType(),entry.getValue());
             field.set(out,value);
         }
         return out;

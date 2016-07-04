@@ -5,6 +5,8 @@ import org.testng.annotations.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.time.Instant;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.testng.Assert.*;
 
@@ -26,6 +28,10 @@ class B extends A {
     private Integer q = null;
     public static int m = 44;
     public transient int n = -1;
+}
+
+class C {
+    TreeSet<String> strings;
 }
 
 public class TestStatics {
@@ -70,5 +76,40 @@ public class TestStatics {
         assertEquals(Statics.coerceTo(Instant.class,instant.toString()),instant);
         assertEquals(Statics.coerceTo(char.class,"j"),'j');
         assertEquals(Statics.coerceTo(int.class,"3"),3);
+    }
+
+    @Test
+    public void testCoerceToArray() throws Exception {
+        Object input = Parser.parse("['hello','world']");
+        String[] out = (String[]) Statics.coerceTo(String[].class,input);
+        assertEquals(out[0],"hello");
+        assertEquals(out[1],"world");
+    }
+
+
+    @Test
+    public void testCoerceToCollection() throws Exception {
+        Statics.register(C.class);
+        Object input = Parser.parse("C(strings=['a','b'])");
+        C out = (C) Statics.coerceTo(C.class,input);
+        Set<String> s = out.strings;
+        assertTrue(s.contains("a"));
+        assertTrue(s.contains("b"));
+    }
+
+
+    @Test
+    public void testCoerceArray() throws Exception {
+        Statics.register(C.class);
+        Object input = new String[] {"A","B"};
+        char[] out =  (char[]) Statics.coerceTo(char[].class,input);
+        assertEquals(out[0],'A');
+        assertEquals(out[1],'B');
+    }
+
+    @Test
+    public void decompose() throws Exception {
+        Class c = String[].class;
+        System.out.println(c.toString());
     }
 }
