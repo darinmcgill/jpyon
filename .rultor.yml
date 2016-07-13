@@ -7,5 +7,4 @@ decrypt:
 release:
   script: |
     mvn versions:set "-DnewVersion=${tag}"
-    git commit -am "${tag}"
     mvn clean deploy -P central-deploy --settings /home/r/settings.xml -P jpyon
