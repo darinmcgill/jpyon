@@ -142,6 +142,7 @@ public class Statics {
                 toPyon(entry.getValue(),stringBuilder,seen);
             }
             stringBuilder.append('}');
+            return;
         }
         if (obj instanceof Pyob) {
             Pyob pyob = (Pyob) obj;

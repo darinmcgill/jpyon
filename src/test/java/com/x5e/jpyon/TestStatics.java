@@ -114,4 +114,27 @@ public class TestStatics {
         Object out = Statics.fromPyob(pyob);
         assertTrue(out instanceof Instant);
     }
+    
+    @Test
+    public void testGetClass() throws Exception {
+    	Statics.register(A.class);
+    	Statics.register(B.class);
+    	Statics.register(C.class);
+    	
+    	assertEquals(Statics.getClass(A.class.getSimpleName()), A.class);
+    	assertEquals(Statics.getClass(B.class.getSimpleName()), B.class);
+    	assertEquals(Statics.getClass(C.class.getSimpleName()), C.class);
+    }
+    
+    @Test
+    public void testFromPyob() throws Exception {
+    	Statics.register(A.class);
+    	String my_string = "A(i=1,i2=2,j=3)";
+    	Object val = Parser.parse(my_string);
+    	Pyob my_pyob = (Pyob) val;
+    	
+    	Object output = Statics.fromPyob(my_pyob);
+    	
+    	assertTrue(output instanceof A);
+    }
 }
