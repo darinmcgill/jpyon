@@ -8,4 +8,4 @@ release:
   script: |
     mvn versions:set "-DnewVersion=${tag}"
     git commit -am "${tag}"
-    mvn clean deploy -Pjacabi --settings /home/r/settings.xml -P jpyon
+    mvn clean deploy -Pjcabi --settings /home/r/settings.xml -P jpyon
